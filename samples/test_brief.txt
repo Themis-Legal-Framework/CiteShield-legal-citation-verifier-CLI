@@ -1,0 +1,8 @@
+In support of this motion, counsel relies on Brown v. Board of Education, 347 U.S. 483 (1954),
+which held that segregation in public education is inherently unequal.
+
+Additionally, in Miranda v. Arizona, 384 U.S. 436 (1966), the Court required that suspects be informed
+of their rights before custodial interrogation.
+
+Finally, the argument cites a fictitious case, Smith v. Wonderland, 999 U.S. 999 (2050),
+which does not exist and should be flagged.

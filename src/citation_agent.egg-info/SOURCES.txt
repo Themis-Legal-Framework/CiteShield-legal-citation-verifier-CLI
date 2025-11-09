@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/citation_agent/__init__.py
+src/citation_agent/cli.py
+src/citation_agent/document.py
+src/citation_agent/models.py
+src/citation_agent/service.py
+src/citation_agent/tools.py
+src/citation_agent.egg-info/PKG-INFO
+src/citation_agent.egg-info/SOURCES.txt
+src/citation_agent.egg-info/dependency_links.txt
+src/citation_agent.egg-info/entry_points.txt
+src/citation_agent.egg-info/requires.txt
+src/citation_agent.egg-info/top_level.txt
+tests/test_document.py
+tests/test_service.py
+tests/test_tools.py

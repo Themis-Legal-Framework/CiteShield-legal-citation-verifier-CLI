@@ -1,3 +1,19 @@
+Metadata-Version: 2.4
+Name: citation-agent
+Version: 0.1.0
+Summary: CLI helper that uses OpenAI agents to extract and verify legal citations.
+Author-email: Your Team <support@example.com>
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: openai-agents>=0.5.0
+Requires-Dist: typer>=0.15.1
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: rich>=13.9.4
+Provides-Extra: pdf
+Requires-Dist: pypdf>=5.1.0; extra == "pdf"
+Provides-Extra: docx
+Requires-Dist: python-docx>=1.1.2; extra == "docx"
+
 # Citation Agent
 
 Command-line helper that reviews a legal brief or memo with the [`openai-agents-python`](https://github.com/openai/openai-agents-python) SDK. It extracts every cited authority, checks whether the cited proposition is accurate, and flags hallucinated or weak citations before filing.

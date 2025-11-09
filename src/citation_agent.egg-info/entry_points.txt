@@ -1,0 +1,2 @@
+[console_scripts]
+citation-agent = citation_agent.cli:app
