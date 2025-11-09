@@ -1,4 +1,14 @@
-"""High-level orchestration for running the citation agent from the CLI."""
+"""High-level orchestration for running the citation agent from the CLI.
+
+This module provides the core service layer that coordinates:
+    - Document loading and preprocessing
+    - Agent initialization and configuration
+    - Tool setup (document navigation + optional web search)
+    - Agent execution and result extraction
+
+The main entry point is CitationAgentService.run(), which handles the complete
+workflow from raw document to structured CitationVerificationReport.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +24,14 @@ from .tools import BriefContext, get_brief_section, list_brief_sections, search_
 
 @dataclass(slots=True)
 class AgentConfig:
-    """Runtime knobs for the CLI."""
+    """Runtime configuration for the citation agent.
+
+    Attributes:
+        model: OpenAI model identifier (e.g., 'gpt-4.1-mini', 'o4-mini')
+        temperature: Sampling temperature (0.0-1.0), lower is more deterministic
+        max_turns: Maximum reasoning iterations before timing out
+        enable_web_search: Whether to provide the agent with web search capability
+    """
 
     model: str = "gpt-4.1-mini"
     temperature: float = 0.1
@@ -23,13 +40,49 @@ class AgentConfig:
 
 
 class CitationAgentService:
-    """Loads a brief, wires up the OpenAI agent, and returns the structured report."""
+    """Main service for running citation verification on legal documents.
+
+    This service orchestrates the complete citation verification workflow:
+    1. Loads and preprocesses the document
+    2. Chunks it into manageable sections
+    3. Configures the OpenAI agent with custom tools
+    4. Runs the agent to analyze all citations
+    5. Returns a structured verification report
+
+    The service uses the OpenAI Agents SDK to provide the model with:
+        - Custom tools for navigating the document
+        - Optional web search for verifying citations
+        - Structured output enforcement via Pydantic models
+    """
 
     def __init__(self, config: AgentConfig | None = None) -> None:
+        """Initialize the service with runtime configuration.
+
+        Args:
+            config: Agent configuration settings. If None, uses defaults.
+        """
         self.config = config or AgentConfig()
 
     def run(self, brief_path: Path) -> CitationVerificationReport:
-        """Entry point used by the CLI."""
+        """Run citation verification on a legal document.
+
+        This is the main entry point that processes a document end-to-end.
+
+        Args:
+            brief_path: Path to the legal brief or memo to analyze
+
+        Returns:
+            A structured CitationVerificationReport containing all findings
+
+        Raises:
+            FileNotFoundError: If the document doesn't exist
+            RuntimeError: If required libraries (PDF/Word) are not installed
+            ValueError: If the file format is not supported
+
+        Note:
+            The agent may make multiple LLM calls and use web search to verify
+            citations. Processing time varies with document length and complexity.
+        """
 
         text = load_document_text(brief_path)
         chunks = chunk_document(text)
@@ -50,7 +103,21 @@ class CitationAgentService:
         return result.final_output_as(CitationVerificationReport, raise_if_incorrect_type=True)
 
     def _build_agent(self) -> Agent[BriefContext]:
-        """Instantiate the OpenAI agent with instructions and the available tools."""
+        """Build and configure the OpenAI agent.
+
+        Creates the 'CiteShield' agent with:
+            - Custom instructions for citation verification
+            - Document navigation tools (list, get, search)
+            - Optional web search capability
+            - Structured output type (CitationVerificationReport)
+
+        Returns:
+            A configured Agent instance ready to analyze documents
+
+        Note:
+            The agent uses dynamic instructions that incorporate the document
+            name and chunk count from the runtime context.
+        """
 
         tools = [list_brief_sections, get_brief_section, search_brief_sections]
         if self.config.enable_web_search:
@@ -81,7 +148,25 @@ class CitationAgentService:
         )
 
     def _build_agent_input(self, context: BriefContext, annotated_text: str) -> str:
-        """Prepare the string passed as the user's message to the agent."""
+        """Construct the initial prompt for the agent.
+
+        Builds a comprehensive prompt that includes:
+            - Document metadata (name, section count)
+            - Overview of document structure
+            - Full document text with line numbers
+            - Instructions for thorough verification
+
+        Args:
+            context: BriefContext containing document chunks and metadata
+            annotated_text: Complete document with line numbers
+
+        Returns:
+            A formatted prompt string for the agent
+
+        Note:
+            The full annotated document is included to ensure the agent has
+            complete context, while tools allow efficient section-by-section analysis.
+        """
 
         return (
             f"You are reviewing the document '{context.document_name}'.\n"

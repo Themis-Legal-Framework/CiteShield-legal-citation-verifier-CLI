@@ -1,4 +1,15 @@
-"""Command-line entry point exposed via `citation-agent`."""
+"""Command-line entry point exposed via `citation-agent`.
+
+This module provides the CLI interface for the CiteShield citation verification tool.
+It uses Typer for command-line parsing and Rich for beautiful terminal output.
+
+Available Commands:
+    verify: Run citation verification on a legal document
+    explain-tools: Display information about the agent's available tools
+
+The main entry point is the `verify` command, which processes a document and
+outputs either a formatted table or JSON report of citation verification results.
+"""
 
 from __future__ import annotations
 
@@ -26,7 +37,40 @@ def verify(
     web_search: Annotated[bool, typer.Option(help="Allow the agent to search the open web.")] = True,
     output: Annotated[Literal["table", "json"], typer.Option(help="Choose JSON for raw output.")] = "table",
 ) -> None:
-    """Run the agent against the supplied document."""
+    """Verify citations in a legal document using AI.
+
+    This command processes a legal brief or memo, extracting all citations and
+    verifying their accuracy using an OpenAI agent. The agent:
+        1. Identifies all legal citations in the document
+        2. Checks if each citation supports its claimed proposition
+        3. Uses web search (optional) to verify citations
+        4. Provides a detailed report with recommendations
+
+    Args:
+        file: Path to the document file (.txt, .md, .pdf, or .docx)
+        model: OpenAI model to use (e.g., 'gpt-4.1-mini', 'o4-mini')
+        temperature: Sampling temperature (0.0-1.0), lower is more deterministic
+        max_turns: Maximum number of agent reasoning iterations
+        web_search: Enable web search for citation verification
+        output: Output format - 'table' for formatted display, 'json' for machine-readable
+
+    Returns:
+        None. Outputs results to stdout and exits with code 0 on success,
+        1 on file error, or 2 on agent error.
+
+    Examples:
+        # Basic verification with default settings
+        $ citation-agent verify brief.txt
+
+        # Use a specific model with JSON output
+        $ citation-agent verify brief.pdf --model gpt-4.1 --output json
+
+        # Disable web search and increase max turns
+        $ citation-agent verify memo.docx --no-web-search --max-turns 12
+
+    Note:
+        Requires OPENAI_API_KEY environment variable to be set.
+    """
 
     config = AgentConfig(
         model=model,
@@ -54,7 +98,18 @@ def verify(
 
 @app.command("explain-tools")
 def explain_tools() -> None:
-    """Describe the built-in tools the agent can rely on."""
+    """Display information about the agent's available tools.
+
+    Prints a formatted table describing each tool that the CiteShield agent
+    can use during citation verification. This helps users understand how
+    the agent navigates and analyzes documents.
+
+    Tools include:
+        - list_brief_sections: Browse document structure
+        - get_brief_section: Read specific sections
+        - search_brief_sections: Find relevant passages
+        - web_search: Verify citations online (optional)
+    """
 
     rows = [
         ("list_brief_sections", "Quick index of document sections, accepts pagination arguments."),
@@ -71,6 +126,20 @@ def explain_tools() -> None:
 
 
 def _render_report(report: CitationVerificationReport) -> None:
+    """Render a citation verification report to the terminal.
+
+    Creates a formatted display using Rich library components:
+        1. Summary panel with overall statistics
+        2. Narrative summary panel
+        3. Detailed table of individual citations
+
+    Args:
+        report: The CitationVerificationReport to display
+
+    Note:
+        This function is called internally when output format is 'table'.
+        For 'json' output, the report is serialized directly.
+    """
     header = Table(show_header=False, box=None)
     header.add_row("Document", report.document_name)
     header.add_row("Overall", report.overall_assessment)
