@@ -128,6 +128,10 @@ def chunk_document(
         max_lines: Maximum number of lines per chunk (default: 40)
         overlap: Number of lines to overlap between consecutive chunks (default: 5)
 
+    Raises:
+        ValueError: If ``max_lines`` is not positive, ``overlap`` is negative, or
+            ``overlap`` is greater than or equal to ``max_lines``.
+
     Returns:
         A list of DocumentChunk objects, each containing a portion of the text
         with preserved line numbers
@@ -136,6 +140,13 @@ def chunk_document(
         The overlap ensures continuity for citations that span multiple lines
         or appear near chunk boundaries.
     """
+
+    if max_lines <= 0:
+        raise ValueError("max_lines must be a positive integer")
+    if overlap < 0:
+        raise ValueError("overlap cannot be negative")
+    if overlap >= max_lines:
+        raise ValueError("overlap must be smaller than max_lines")
 
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = normalized.split("\n")
