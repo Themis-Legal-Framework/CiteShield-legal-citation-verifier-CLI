@@ -10,7 +10,7 @@ def test_verify_runtime_error_exit(monkeypatch, tmp_path):
     failing_message = "Service boom"
 
     class FailingService:
-        def __init__(self, config):  # pragma: no cover - simple stub
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
             pass
 
         def run(self, file_path):
@@ -32,7 +32,7 @@ def test_verify_accepts_inline_text(monkeypatch):
     captured: dict[str, tuple[str, str]] = {}
 
     class RecordingService:
-        def __init__(self, config):  # pragma: no cover - simple stub
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
             pass
 
         def run(self, file_path):  # pragma: no cover - unused in this test
@@ -64,7 +64,7 @@ def test_verify_reads_from_stdin(monkeypatch):
     captured: dict[str, tuple[str, str]] = {}
 
     class RecordingService:
-        def __init__(self, config):  # pragma: no cover - simple stub
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
             pass
 
         def run(self, file_path):  # pragma: no cover - unused in this test
@@ -90,3 +90,34 @@ def test_verify_reads_from_stdin(monkeypatch):
 
     assert result.exit_code == 0
     assert captured["args"] == ("Example citation from stdin", "stdin")
+
+
+def test_verify_registers_progress_callback(monkeypatch, tmp_path):
+    callbacks: list[object] = []
+
+    class RecordingService:
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
+            callbacks.append(progress_callback)
+
+        def run(self, file_path):
+            return CitationVerificationReport(
+                document_name=str(file_path),
+                overall_assessment="needs_review",
+                total_citations=0,
+                verified_citations=0,
+                flagged_citations=0,
+                unable_to_locate=0,
+                narrative_summary="",
+                citations=[],
+            )
+
+    monkeypatch.setattr(cli, "CitationAgentService", RecordingService)
+
+    document_path = tmp_path / "brief.txt"
+    document_path.write_text("Example content")
+
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["verify", str(document_path), "--output", "json"])
+
+    assert result.exit_code == 0
+    assert callbacks and callable(callbacks[0])

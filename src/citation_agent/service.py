@@ -14,8 +14,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import inspect
+import logging
+from collections.abc import Awaitable, Callable
+from typing import Any, Literal
 
 from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, WebSearchTool
+from agents.lifecycle import RunHooksBase
+from agents.items import ModelResponse
 
 from .document import annotate_document, chunk_document, load_document_text, summarize_chunks
 from .models import CitationVerificationReport
@@ -39,6 +45,169 @@ class AgentConfig:
     enable_web_search: bool = True
 
 
+logger = logging.getLogger(__name__)
+
+
+ProgressEventType = Literal[
+    "agent_start",
+    "agent_end",
+    "llm_start",
+    "llm_end",
+    "tool_start",
+    "tool_end",
+    "handoff",
+]
+
+
+@dataclass(slots=True)
+class ProgressEvent:
+    """Lightweight notification payload for agent lifecycle events."""
+
+    event: ProgressEventType
+    agent_name: str | None
+    turn: int | None = None
+    payload: dict[str, Any] | None = None
+
+
+ProgressCallback = Callable[[ProgressEvent], None | Awaitable[None]]
+
+
+class _ProgressRunHooks(RunHooksBase[BriefContext, Agent[BriefContext]]):
+    """Forward key agent lifecycle events to an observer callback."""
+
+    def __init__(self, callback: ProgressCallback) -> None:
+        self._callback = callback
+        self._turn = 0
+
+    async def _emit(
+        self,
+        *,
+        event: ProgressEventType,
+        agent: Agent[BriefContext],
+        turn: int | None,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        progress_event = ProgressEvent(
+            event=event,
+            agent_name=_safe_agent_name(agent),
+            turn=turn,
+            payload=payload or None,
+        )
+        try:
+            result = self._callback(progress_event)
+            if inspect.isawaitable(result):
+                await result
+        except Exception:  # pragma: no cover - defensive logging
+            logger.exception("Progress callback failed during %s", event)
+
+    async def on_agent_start(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+    ) -> None:
+        self._turn += 1
+        payload = {
+            "document_name": context.context.document_name,
+            "chunk_count": len(context.context.chunks),
+        }
+        await self._emit(event="agent_start", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_agent_end(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+        output: Any,
+    ) -> None:
+        payload = {"output_type": type(output).__name__}
+        await self._emit(event="agent_end", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_llm_start(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+        system_prompt: str | None,
+        input_items: list[Any],
+    ) -> None:
+        payload = {
+            "system_prompt": system_prompt,
+            "input_count": len(input_items),
+        }
+        await self._emit(event="llm_start", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_llm_end(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+        response: ModelResponse,
+    ) -> None:
+        payload = _extract_response_payload(response)
+        await self._emit(event="llm_end", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_tool_start(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+        tool: Any,
+    ) -> None:
+        payload = {"tool_name": getattr(tool, "name", type(tool).__name__)}
+        await self._emit(event="tool_start", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_tool_end(
+        self,
+        context: RunContextWrapper[BriefContext],
+        agent: Agent[BriefContext],
+        tool: Any,
+        result: str,
+    ) -> None:
+        payload = {
+            "tool_name": getattr(tool, "name", type(tool).__name__),
+            "result": result,
+        }
+        await self._emit(event="tool_end", agent=agent, turn=self._turn, payload=payload)
+
+    async def on_handoff(
+        self,
+        context: RunContextWrapper[BriefContext],
+        from_agent: Agent[BriefContext],
+        to_agent: Agent[BriefContext],
+    ) -> None:
+        payload = {"to_agent": _safe_agent_name(to_agent)}
+        await self._emit(event="handoff", agent=from_agent, turn=self._turn, payload=payload)
+
+
+def _safe_agent_name(agent: Agent[BriefContext]) -> str:
+    return getattr(agent, "name", agent.__class__.__name__)
+
+
+def _extract_response_payload(response: ModelResponse) -> dict[str, Any]:
+    """Extract reasoning traces and assistant messages for observers."""
+
+    reasoning_lines: list[str] = []
+    messages: list[str] = []
+
+    for item in response.output:
+        item_type = getattr(item, "type", None)
+        if item_type == "reasoning":
+            contents = getattr(item, "content", None) or []
+            for content in contents:
+                text = getattr(content, "text", None)
+                if text:
+                    reasoning_lines.append(text)
+        elif item_type == "message":
+            for content in getattr(item, "content", []):
+                if getattr(content, "type", None) == "output_text":
+                    text = getattr(content, "text", None)
+                    if text:
+                        messages.append(text)
+
+    payload: dict[str, Any] = {}
+    if reasoning_lines:
+        payload["reasoning"] = reasoning_lines
+    if messages:
+        payload["messages"] = messages
+    return payload
+
+
 class CitationAgentService:
     """Main service for running citation verification on legal documents.
 
@@ -55,13 +224,19 @@ class CitationAgentService:
         - Structured output enforcement via Pydantic models
     """
 
-    def __init__(self, config: AgentConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: AgentConfig | None = None,
+        *,
+        progress_callback: ProgressCallback | None = None,
+    ) -> None:
         """Initialize the service with runtime configuration.
 
         Args:
             config: Agent configuration settings. If None, uses defaults.
         """
         self.config = config or AgentConfig()
+        self._progress_callback = progress_callback
 
     def run(self, brief_path: Path) -> CitationVerificationReport:
         """Run citation verification on a legal document.
@@ -111,11 +286,14 @@ class CitationAgentService:
         agent = self._build_agent()
         agent_input = self._build_agent_input(context, annotated_text)
 
+        hooks = _ProgressRunHooks(self._progress_callback) if self._progress_callback else None
+
         result = Runner.run_sync(
             agent,
             agent_input,
             context=context,
             max_turns=self.config.max_turns,
+            hooks=hooks,
             run_config=RunConfig(model=self.config.model),
         )
         return result.final_output_as(CitationVerificationReport, raise_if_incorrect_type=True)
