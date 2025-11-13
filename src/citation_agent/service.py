@@ -85,10 +85,28 @@ class CitationAgentService:
         """
 
         text = load_document_text(brief_path)
+        return self.run_from_text(text, document_name=brief_path.name)
+
+    def run_from_text(self, text: str, *, document_name: str = "pasted-text") -> CitationVerificationReport:
+        """Run citation verification on an in-memory string.
+
+        Args:
+            text: Complete document text to evaluate.
+            document_name: Friendly name to display in the final report.
+
+        Returns:
+            A structured CitationVerificationReport containing all findings.
+        """
+
+        return self._execute(text=text, document_name=document_name)
+
+    def _execute(self, *, text: str, document_name: str) -> CitationVerificationReport:
+        """Internal helper that executes the agent workflow."""
+
         chunks = chunk_document(text)
         overview = summarize_chunks(chunks, limit=6)
         annotated_text = annotate_document(text)
-        context = BriefContext(document_name=brief_path.name, chunks=chunks, overview=overview)
+        context = BriefContext(document_name=document_name, chunks=chunks, overview=overview)
 
         agent = self._build_agent()
         agent_input = self._build_agent_input(context, annotated_text)

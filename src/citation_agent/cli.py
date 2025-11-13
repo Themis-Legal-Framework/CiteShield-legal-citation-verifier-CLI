@@ -13,6 +13,7 @@ outputs either a formatted table or JSON report of citation verification results
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -30,7 +31,19 @@ console = Console()
 
 @app.command()
 def verify(
-    file: Annotated[Path, typer.Argument(help="Path to the brief or memo (txt, md, pdf, docx).")],
+    file: Annotated[
+        Path | None,
+        typer.Argument(
+            help="Path to the brief or memo (txt, md, pdf, docx). Use '-' to read from stdin.",
+        ),
+    ] = None,
+    text: Annotated[
+        str | None,
+        typer.Option(
+            "--text",
+            help="Provide raw document text directly via the command line.",
+        ),
+    ] = None,
     model: Annotated[str, typer.Option(help="OpenAI model identifier.")] = "gpt-4.1-mini",
     temperature: Annotated[float, typer.Option(min=0.0, max=1.0)] = 0.1,
     max_turns: Annotated[int, typer.Option(help="Max reasoning turns before aborting.")] = 8,
@@ -47,7 +60,8 @@ def verify(
         4. Provides a detailed report with recommendations
 
     Args:
-        file: Path to the document file (.txt, .md, .pdf, or .docx)
+        file: Path to the document file (.txt, .md, .pdf, or .docx). Use '-' to read from stdin.
+        text: Raw document text provided inline via --text
         model: OpenAI model to use (e.g., 'gpt-4.1-mini', 'o4-mini')
         temperature: Sampling temperature (0.0-1.0), lower is more deterministic
         max_turns: Maximum number of agent reasoning iterations
@@ -62,6 +76,12 @@ def verify(
         # Basic verification with default settings
         $ citation-agent verify brief.txt
 
+        # Paste text via stdin (press Ctrl-D to finish on macOS/Linux)
+        $ citation-agent verify -
+
+        # Provide inline text without creating a file
+        $ citation-agent verify --text "Roe v. Wade..."
+
         # Use a specific model with JSON output
         $ citation-agent verify brief.pdf --model gpt-4.1 --output json
 
@@ -72,6 +92,11 @@ def verify(
         Requires OPENAI_API_KEY environment variable to be set.
     """
 
+    if file is None and text is None:
+        raise typer.BadParameter("Provide a document path or use --text / '-' for stdin input.")
+    if file is not None and text is not None:
+        raise typer.BadParameter("Cannot supply both a file path and --text.")
+
     config = AgentConfig(
         model=model,
         temperature=temperature,
@@ -81,7 +106,19 @@ def verify(
     service = CitationAgentService(config=config)
 
     try:
-        report = service.run(file)
+        if text is not None:
+            if not text.strip():
+                raise ValueError("Provided --text input is empty.")
+            report = service.run_from_text(text, document_name="inline-text")
+        else:
+            assert file is not None
+            if str(file) == "-":
+                stdin_text = sys.stdin.read()
+                if not stdin_text.strip():
+                    raise ValueError("No input received from stdin.")
+                report = service.run_from_text(stdin_text, document_name="stdin")
+            else:
+                report = service.run(file)
     except FileNotFoundError as exc:
         typer.secho(str(exc), fg=typer.colors.RED)
         raise typer.Exit(code=1) from exc

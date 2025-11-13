@@ -30,6 +30,7 @@
 - **AI-Powered Verification**: Uses OpenAI agents to verify each citation supports its claimed proposition
 - **Web Search Integration**: Optional web search to confirm citations exist and are accurately represented
 - **Multiple File Formats**: Supports .txt, .md, .pdf, and .docx files
+- **Flexible Input**: Paste text directly from the terminal or load existing documents
 - **Structured Output**: Returns detailed reports in table or JSON format
 - **Risk Assessment**: Flags citations as verified, needs review, not found, or contradicted
 - **Line-Level References**: Pinpoints exact locations in source documents
@@ -102,6 +103,12 @@ citation-agent verify motion.pdf
 
 # Verify a Word document
 citation-agent verify memo.docx
+
+# Paste text directly (press Ctrl-D when finished on macOS/Linux)
+citation-agent verify -
+
+# Provide inline text without creating a file
+citation-agent verify --text "Roe v. Wade ..."
 ```
 
 ### Advanced Options

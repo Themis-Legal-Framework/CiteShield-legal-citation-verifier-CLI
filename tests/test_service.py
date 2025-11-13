@@ -33,3 +33,9 @@ def test_run_returns_report(tmp_path: Path, dummy_service: CitationAgentService)
     report = dummy_service.run(path)
     assert isinstance(report, CitationVerificationReport)
     assert report.overall_assessment == "pass"
+
+
+def test_run_from_text_returns_report(dummy_service: CitationAgentService):
+    report = dummy_service.run_from_text("Marbury v. Madison", document_name="inline")
+    assert isinstance(report, CitationVerificationReport)
+    assert report.overall_assessment == "pass"
