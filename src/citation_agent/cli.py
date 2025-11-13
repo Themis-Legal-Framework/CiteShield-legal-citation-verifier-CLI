@@ -27,6 +27,7 @@ from rich.text import Text
 
 from .models import CitationAssessment, CitationVerificationReport
 from .service import AgentConfig, CitationAgentService, ProgressEvent
+from .report_exporter import ReportExporter
 
 app = typer.Typer(help="Vet legal briefs for hallucinated citations using OpenAI agents.")
 console = Console()
@@ -52,6 +53,30 @@ def verify(
     max_turns: Annotated[int, typer.Option(help="Max reasoning turns before aborting.")] = 8,
     web_search: Annotated[bool, typer.Option(help="Allow the agent to search the open web.")] = True,
     output: Annotated[Literal["table", "json"], typer.Option(help="Choose JSON for raw output.")] = "table",
+    export_html: Annotated[
+        Path | None,
+        typer.Option(
+            "--export-html",
+            help="Write an HTML report to the given file path.",
+            dir_okay=False,
+        ),
+    ] = None,
+    export_csv: Annotated[
+        Path | None,
+        typer.Option(
+            "--export-csv",
+            help="Write a CSV report to the given file path.",
+            dir_okay=False,
+        ),
+    ] = None,
+    export: Annotated[
+        Path | None,
+        typer.Option(
+            "--export",
+            help="Directory where both HTML and CSV exports should be written.",
+            file_okay=False,
+        ),
+    ] = None,
 ) -> None:
     """Verify citations in a legal document using AI.
 
@@ -91,6 +116,9 @@ def verify(
         # Disable web search and increase max turns
         $ citation-agent verify memo.docx --no-web-search --max-turns 12
 
+        # Export structured reports alongside the console table
+        $ citation-agent verify brief.txt --export reports/
+    
     Note:
         Requires OPENAI_API_KEY environment variable to be set.
     """
@@ -125,6 +153,8 @@ def verify(
     finally:
         progress_renderer.set_live(None)
 
+    _handle_exports(report, export_html=export_html, export_csv=export_csv, export_dir=export)
+
     if output == "json":
         typer.echo(report.model_dump_json(indent=2))
         return
@@ -153,6 +183,44 @@ def _run_service(
         return service.run_from_text(stdin_text, document_name="stdin")
 
     return service.run(file)
+
+
+def _handle_exports(
+    report: CitationVerificationReport,
+    *,
+    export_html: Path | None,
+    export_csv: Path | None,
+    export_dir: Path | None,
+) -> None:
+    """Write report exports requested through CLI flags."""
+
+    if not any((export_html, export_csv, export_dir)):
+        return
+
+    exporter = ReportExporter(report)
+    messages: list[str] = []
+
+    if export_dir is not None:
+        export_dir.mkdir(parents=True, exist_ok=True)
+        base = ReportExporter.default_basename(report.document_name)
+        html_path = export_dir / f"{base}.html"
+        csv_path = export_dir / f"{base}.csv"
+        exporter.write_html(html_path)
+        exporter.write_csv(csv_path)
+        messages.append(f"HTML report -> {html_path}")
+        messages.append(f"CSV report  -> {csv_path}")
+
+    if export_html is not None:
+        exporter.write_html(export_html)
+        messages.append(f"HTML report -> {export_html}")
+
+    if export_csv is not None:
+        exporter.write_csv(export_csv)
+        messages.append(f"CSV report  -> {export_csv}")
+
+    if messages:
+        formatted = "\n".join(messages)
+        typer.secho(f"Saved report exports:\n{formatted}", fg=typer.colors.GREEN)
 
 
 class _ProgressRenderer:

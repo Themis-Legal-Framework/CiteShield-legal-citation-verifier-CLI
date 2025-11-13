@@ -32,6 +32,7 @@
 - **Multiple File Formats**: Supports .txt, .md, .pdf, and .docx files
 - **Flexible Input**: Paste text directly from the terminal or load existing documents
 - **Structured Output**: Returns detailed reports in table or JSON format
+- **Report Exports**: Generate shareable HTML and CSV summaries of each run
 - **Risk Assessment**: Flags citations as verified, needs review, not found, or contradicted
 - **Line-Level References**: Pinpoints exact locations in source documents
 - **Configurable Models**: Works with various OpenAI models (gpt-4.1-mini, o4-mini, etc.)
@@ -179,6 +180,24 @@ Outputs machine-readable JSON for integration with other tools or workflows.
 ```bash
 citation-agent verify brief.txt --output json > report.json
 ```
+
+### Exporting Reports
+
+Need a deliverable version of the analysis? CiteShield can export the
+`CitationVerificationReport` to HTML and CSV alongside the console output.
+
+```bash
+# Write both HTML and CSV files into the `reports/` directory
+citation-agent verify brief.txt --export reports/
+
+# Target explicit file paths for each export format
+citation-agent verify brief.txt --export-html report.html --export-csv report.csv
+```
+
+The HTML export includes summary metrics, the narrative explanation, and a
+rich citation table with clickable supporting evidence links. The CSV export
+stores the same information in a tabular format, making it easy to audit or
+import into spreadsheets.
 
 ### Getting Help
 

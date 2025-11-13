@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from typer.testing import CliRunner
 
 from citation_agent import cli
 from citation_agent.models import CitationVerificationReport
+from citation_agent.report_exporter import ReportExporter
 
 
 def test_verify_runtime_error_exit(monkeypatch, tmp_path):
@@ -121,3 +124,79 @@ def test_verify_registers_progress_callback(monkeypatch, tmp_path):
 
     assert result.exit_code == 0
     assert callbacks and callable(callbacks[0])
+
+
+def _sample_report(document_name: str) -> CitationVerificationReport:
+    return CitationVerificationReport(
+        document_name=document_name,
+        overall_assessment="needs_review",
+        total_citations=1,
+        verified_citations=0,
+        flagged_citations=1,
+        unable_to_locate=0,
+        narrative_summary="Sample narrative",
+        citations=[],
+    )
+
+
+def test_verify_export_directory_option(monkeypatch, tmp_path):
+    class StubService:
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
+            pass
+
+        def run(self, file_path):
+            return _sample_report(Path(file_path).name)
+
+    monkeypatch.setattr(cli, "CitationAgentService", StubService)
+
+    document_path = tmp_path / "brief.txt"
+    document_path.write_text("content")
+    export_dir = tmp_path / "exports"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli.app,
+        ["verify", str(document_path), "--export", str(export_dir), "--output", "json"],
+    )
+
+    assert result.exit_code == 0
+    base = ReportExporter.default_basename("brief.txt")
+    html_path = export_dir / f"{base}.html"
+    csv_path = export_dir / f"{base}.csv"
+    assert html_path.exists()
+    assert csv_path.exists()
+
+
+def test_verify_export_specific_files(monkeypatch, tmp_path):
+    class StubService:
+        def __init__(self, config, progress_callback=None):  # pragma: no cover - simple stub
+            pass
+
+        def run(self, file_path):
+            return _sample_report(Path(file_path).name)
+
+    monkeypatch.setattr(cli, "CitationAgentService", StubService)
+
+    document_path = tmp_path / "brief.txt"
+    document_path.write_text("content")
+    html_path = tmp_path / "out.html"
+    csv_path = tmp_path / "out.csv"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli.app,
+        [
+            "verify",
+            str(document_path),
+            "--export-html",
+            str(html_path),
+            "--export-csv",
+            str(csv_path),
+            "--output",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert html_path.exists()
+    assert csv_path.exists()
