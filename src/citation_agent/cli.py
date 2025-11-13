@@ -153,7 +153,11 @@ def verify(
     finally:
         progress_renderer.set_live(None)
 
-    _handle_exports(report, export_html=export_html, export_csv=export_csv, export_dir=export)
+    export_summary = _handle_exports(
+        report, export_html=export_html, export_csv=export_csv, export_dir=export
+    )
+    if export_summary:
+        typer.secho(export_summary, fg=typer.colors.GREEN, err=True)
 
     if output == "json":
         typer.echo(report.model_dump_json(indent=2))
@@ -191,11 +195,15 @@ def _handle_exports(
     export_html: Path | None,
     export_csv: Path | None,
     export_dir: Path | None,
-) -> None:
-    """Write report exports requested through CLI flags."""
+) -> str | None:
+    """Write report exports requested through CLI flags.
+
+    Returns a formatted summary string when exports are created so the caller can
+    decide where to display it (stdout vs. stderr).
+    """
 
     if not any((export_html, export_csv, export_dir)):
-        return
+        return None
 
     exporter = ReportExporter(report)
     messages: list[str] = []
@@ -218,11 +226,11 @@ def _handle_exports(
         exporter.write_csv(export_csv)
         messages.append(f"CSV report  -> {export_csv}")
 
-    if messages:
-        formatted = "\n".join(messages)
-        typer.secho(
-            f"Saved report exports:\n{formatted}", fg=typer.colors.GREEN, err=True
-        )
+    if not messages:
+        return None
+
+    formatted = "\n".join(messages)
+    return f"Saved report exports:\n{formatted}"
 
 
 class _ProgressRenderer:
