@@ -16,6 +16,10 @@ def test_chunk_document_allows_zero_overlap():
     assert chunks[1].start_line == 3
 
 
+def test_chunk_document_empty_text_returns_empty_list():
+    assert chunk_document("") == []
+
+
 @pytest.mark.parametrize(
     "max_lines, overlap, message",
     [
@@ -37,3 +41,7 @@ def test_annotate_document_numbers_lines():
     annotated = annotate_document(text)
     assert "0001:" in annotated
     assert "0003:" in annotated
+
+
+def test_annotate_document_returns_empty_string_for_empty_text():
+    assert annotate_document("") == ""

@@ -150,6 +150,8 @@ def chunk_document(
 
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = normalized.split("\n")
+    if not any(line.strip() for line in lines):
+        return []
     chunks: list[DocumentChunk] = []
     start = 0
     index = 0
@@ -189,7 +191,10 @@ def annotate_document(text: str) -> str:
     """
 
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    return "\n".join(f"{idx+1:04d}: {line}".rstrip() for idx, line in enumerate(normalized.split("\n")))
+    lines = normalized.split("\n")
+    if not any(line.strip() for line in lines):
+        return ""
+    return "\n".join(f"{idx+1:04d}: {line}".rstrip() for idx, line in enumerate(lines))
 
 
 def summarize_chunks(chunks: Iterable[DocumentChunk], *, limit: int = 5) -> str:
