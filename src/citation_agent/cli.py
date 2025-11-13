@@ -220,7 +220,9 @@ def _handle_exports(
 
     if messages:
         formatted = "\n".join(messages)
-        typer.secho(f"Saved report exports:\n{formatted}", fg=typer.colors.GREEN)
+        typer.secho(
+            f"Saved report exports:\n{formatted}", fg=typer.colors.GREEN, err=True
+        )
 
 
 class _ProgressRenderer:
