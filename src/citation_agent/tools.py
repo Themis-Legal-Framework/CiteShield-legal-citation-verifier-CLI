@@ -104,6 +104,32 @@ class AuthorityLookupClient:
         elif not isinstance(snippets, list):
             snippets = []
 
+        normalized_snippets: list[str] = []
+        for item in snippets:
+            if item is None:
+                continue
+            if isinstance(item, str):
+                text = item
+            elif isinstance(item, dict):
+                text = None
+                for key in ("text", "snippet", "content", "value"):
+                    candidate = item.get(key)
+                    if isinstance(candidate, str) and candidate.strip():
+                        text = candidate
+                        break
+                if text is None:
+                    if any(item.values()):
+                        text = json.dumps(item, ensure_ascii=False)
+                    else:
+                        continue
+            else:
+                text = str(item)
+
+            text = text.strip()
+            if text:
+                normalized_snippets.append(text)
+        snippets = normalized_snippets
+
         return {
             "authority_name": payload.get("authority_name")
             or payload.get("title")

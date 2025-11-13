@@ -379,7 +379,11 @@ class CitationAgentService:
         env_base_url = os.getenv(AUTHORITY_LOOKUP_BASE_URL_ENV)
         base_url = self.config.authority_lookup_base_url or env_base_url
         api_key = self.config.authority_lookup_api_key or env_api_key
-        enabled = self.config.enable_authority_lookup or bool(base_url)
+
+        if self.config.enable_authority_lookup is False:
+            enabled = False
+        else:
+            enabled = bool(self.config.enable_authority_lookup) or bool(base_url)
         return enabled, api_key, base_url, self.config.authority_lookup_timeout
 
     def _build_authority_lookup_client(self) -> AuthorityLookupClient | None:

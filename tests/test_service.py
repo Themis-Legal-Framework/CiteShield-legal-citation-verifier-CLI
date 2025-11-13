@@ -161,3 +161,22 @@ def test_context_includes_authority_lookup_client(monkeypatch):
     assert context.authority_lookup_client is not None
     assert context.authority_lookup_client.api_key == "secret"
     assert context.authority_lookup_client.timeout == 3.5
+
+
+def test_explicit_disable_overrides_env(monkeypatch):
+    monkeypatch.setenv("CITESHIELD_AUTHORITY_LOOKUP_BASE_URL", "https://api.example.com/authorities")
+    monkeypatch.setenv("CITESHIELD_AUTHORITY_LOOKUP_API_KEY", "env-secret")
+
+    config = AgentConfig(enable_web_search=False, enable_authority_lookup=False)
+    service = CitationAgentService(config)
+
+    enabled, api_key, base_url, _ = service._resolve_authority_lookup_config()
+    assert not enabled
+    assert api_key == "env-secret"
+    assert base_url == "https://api.example.com/authorities"
+
+    agent = service._build_agent()
+    tool_names = [getattr(tool, "name", "") for tool in agent.tools]
+    assert not any(name.startswith("lookup_authority") for name in tool_names)
+
+    assert service._build_authority_lookup_client() is None
