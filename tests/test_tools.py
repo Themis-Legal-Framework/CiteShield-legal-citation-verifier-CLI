@@ -133,3 +133,47 @@ def test_authority_lookup_client_requests_api(monkeypatch):
     assert captured["timeout"] == 5.0
     assert data["authority_name"] == "Example Authority"
     assert data["jurisdiction"] == "US"
+
+
+def test_authority_lookup_client_normalizes_snippets(monkeypatch):
+    class FakeResponse:
+        def __init__(self, payload):
+            self._payload = payload
+            self.status = 200
+
+        def read(self):
+            return json.dumps(self._payload).encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    def fake_urlopen(request, timeout):
+        payload = {
+            "authority_name": "Example Authority",
+            "snippets": [
+                {"text": " Primary holding. "},
+                {"snippet": "Alternative phrasing"},
+                {"content": ""},
+                {"unused": "value"},
+                42,
+                None,
+                "  trailing whitespace  ",
+            ],
+        }
+        return FakeResponse(payload)
+
+    monkeypatch.setattr("citation_agent.tools.urlopen", fake_urlopen)
+
+    client = AuthorityLookupClient(base_url="https://api.example.com", api_key="token")
+    data = client.lookup("Brown v. Board")
+
+    assert data["snippets"] == [
+        "Primary holding.",
+        "Alternative phrasing",
+        json.dumps({"unused": "value"}),
+        "42",
+        "trailing whitespace",
+    ]
