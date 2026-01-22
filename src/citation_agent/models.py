@@ -117,7 +117,9 @@ class CitationVerificationReport(BaseModel):
     )
     total_citations: int = Field(..., description="How many citations were extracted.")
     verified_citations: int = Field(..., description="Count of citations marked as verified.")
-    flagged_citations: int = Field(..., description="Citations labeled needs_review or contradicted.")
+    flagged_citations: int = Field(
+        ..., description="Citations labeled needs_review or contradicted."
+    )
     unable_to_locate: int = Field(..., description="Citations marked as not_found.")
     narrative_summary: str = Field(..., description="Short human-readable recap.")
     citations: list[CitationAssessment] = Field(

@@ -283,7 +283,9 @@ class CitationAgentService:
         text = load_document_text(brief_path)
         return self.run_from_text(text, document_name=brief_path.name)
 
-    def run_from_text(self, text: str, *, document_name: str = "pasted-text") -> CitationVerificationReport:
+    def run_from_text(
+        self, text: str, *, document_name: str = "pasted-text"
+    ) -> CitationVerificationReport:
         """Run citation verification on an in-memory string.
 
         Args:

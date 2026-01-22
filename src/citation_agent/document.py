@@ -163,7 +163,9 @@ def chunk_document(
             for line_no, line in enumerate(lines[start:end], start=start + 1)
         ]
         chunk_text = "\n".join(numbered_lines).strip()
-        chunks.append(DocumentChunk(index=index, start_line=start + 1, end_line=end, text=chunk_text))
+        chunks.append(
+            DocumentChunk(index=index, start_line=start + 1, end_line=end, text=chunk_text)
+        )
         if end == len(lines):
             break
         start = max(end - overlap, start + 1)
@@ -194,7 +196,7 @@ def annotate_document(text: str) -> str:
     lines = normalized.split("\n")
     if not any(line.strip() for line in lines):
         return ""
-    return "\n".join(f"{idx+1:04d}: {line}".rstrip() for idx, line in enumerate(lines))
+    return "\n".join(f"{idx + 1:04d}: {line}".rstrip() for idx, line in enumerate(lines))
 
 
 def summarize_chunks(chunks: Iterable[DocumentChunk], *, limit: int = 5) -> str:

@@ -91,9 +91,13 @@ def test_progress_callback_receives_events(monkeypatch):
                 role="assistant",
                 status="completed",
                 type="message",
-                content=[ResponseOutputText(type="output_text", text="Final verdict", annotations=[])],
+                content=[
+                    ResponseOutputText(type="output_text", text="Final verdict", annotations=[])
+                ],
             )
-            response = ModelResponse(output=[reasoning_item, message_item], usage=Usage(), response_id=None)
+            response = ModelResponse(
+                output=[reasoning_item, message_item], usage=Usage(), response_id=None
+            )
             await hooks.on_llm_end(wrapper, agent, response)
 
             tool = SimpleNamespace(name="search_brief_sections")
@@ -163,7 +167,9 @@ def test_context_includes_authority_lookup_client(monkeypatch):
 
 
 def test_explicit_disable_overrides_env(monkeypatch):
-    monkeypatch.setenv("CITESHIELD_AUTHORITY_LOOKUP_BASE_URL", "https://api.example.com/authorities")
+    monkeypatch.setenv(
+        "CITESHIELD_AUTHORITY_LOOKUP_BASE_URL", "https://api.example.com/authorities"
+    )
     monkeypatch.setenv("CITESHIELD_AUTHORITY_LOOKUP_API_KEY", "env-secret")
 
     config = AgentConfig(enable_web_search=False, enable_authority_lookup=False)

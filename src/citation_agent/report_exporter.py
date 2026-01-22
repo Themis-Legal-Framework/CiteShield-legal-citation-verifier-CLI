@@ -46,7 +46,8 @@ class ReportExporter:
 
         if report.citations:
             citation_rows = "".join(
-                _citation_row(index + 1, citation) for index, citation in enumerate(report.citations)
+                _citation_row(index + 1, citation)
+                for index, citation in enumerate(report.citations)
             )
             citation_table = f"""
             <table class=\"citations\">
@@ -263,7 +264,7 @@ def _citation_row(index: int, citation: CitationAssessment) -> str:
             <td>{escape(citation.risk_level)}</td>
             <td>{escape(citation.proposition_summary)}</td>
             <td>{escape(citation.reasoning)}</td>
-            <td>{escape(citation.recommended_fix or '—')}</td>
+            <td>{escape(citation.recommended_fix or "—")}</td>
             <td>{supporting}</td>
         </tr>
     """

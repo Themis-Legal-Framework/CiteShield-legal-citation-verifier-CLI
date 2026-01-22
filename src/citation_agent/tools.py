@@ -78,9 +78,7 @@ class AuthorityLookupClient:
                 if status is None:
                     status = getattr(response, "code", None)
                 if status is not None and int(status) >= 400:
-                    raise AuthorityLookupError(
-                        f"Authority lookup failed with status code {status}"
-                    )
+                    raise AuthorityLookupError(f"Authority lookup failed with status code {status}")
                 raw = response.read()
         except HTTPError as exc:  # pragma: no cover - HTTP failure details
             raise AuthorityLookupError(
@@ -130,9 +128,7 @@ class AuthorityLookupClient:
         snippets = normalized_snippets
 
         return {
-            "authority_name": payload.get("authority_name")
-            or payload.get("title")
-            or citation,
+            "authority_name": payload.get("authority_name") or payload.get("title") or citation,
             "citation": payload.get("citation", citation),
             "jurisdiction": payload.get("jurisdiction", jurisdiction),
             "snippets": snippets,

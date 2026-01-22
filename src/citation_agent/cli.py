@@ -127,9 +127,7 @@ def verify(
         Requires OPENAI_API_KEY environment variable to be set.
     """
     if file is None and text is None:
-        raise typer.BadParameter(
-            "Provide a document path or use --text / '-' for stdin input."
-        )
+        raise typer.BadParameter("Provide a document path or use --text / '-' for stdin input.")
     if file is not None and text is not None:
         raise typer.BadParameter("Cannot supply both a file path and --text.")
 
@@ -143,9 +141,7 @@ def verify(
     service = CitationAgentService(config=config, progress_callback=progress_renderer)
 
     try:
-        with Live(
-            progress_renderer.render(), console=console, refresh_per_second=4
-        ) as live:
+        with Live(progress_renderer.render(), console=console, refresh_per_second=4) as live:
             progress_renderer.set_live(live)
             report = _run_service(service=service, file=file, text=text)
     except FileNotFoundError as exc:
@@ -274,9 +270,7 @@ class _ProgressRenderer:
             message = f"{prefix}Calling tool [bold]{payload.get('tool_name', 'tool')}[/bold]"
             return Text.from_markup(message, style="yellow")
         if event.event == "tool_end":
-            message = (
-                f"{prefix}Tool finished: [bold]{payload.get('tool_name', 'tool')}[/bold]"
-            )
+            message = f"{prefix}Tool finished: [bold]{payload.get('tool_name', 'tool')}[/bold]"
             text = Text.from_markup(message, style="green")
             snippet = payload.get("result")
             if snippet:
