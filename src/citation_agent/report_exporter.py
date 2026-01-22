@@ -1,12 +1,13 @@
 """Utilities for exporting citation verification reports."""
+
 from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Iterable
 from html import escape
 from io import StringIO
 from pathlib import Path
-from typing import Iterable
 
 from .models import CitationAssessment, CitationVerificationReport
 
