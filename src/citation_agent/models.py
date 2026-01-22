@@ -20,7 +20,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 VerificationStatus = Literal["verified", "needs_review", "not_found", "contradicted"]
 """Verification status for a citation.
 
