@@ -15,9 +15,9 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, WebSearchTool
