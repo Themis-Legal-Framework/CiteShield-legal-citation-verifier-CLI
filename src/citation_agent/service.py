@@ -21,8 +21,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, WebSearchTool
-from agents.lifecycle import RunHooksBase
 from agents.items import ModelResponse
+from agents.lifecycle import RunHooksBase
 
 from .document import annotate_document, chunk_document, load_document_text, summarize_chunks
 from .models import CitationVerificationReport
