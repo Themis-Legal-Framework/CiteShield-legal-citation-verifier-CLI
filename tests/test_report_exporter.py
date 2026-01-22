@@ -53,8 +53,8 @@ def test_html_exporter_includes_sections_and_links(tmp_path):
     contents = html_path.read_text(encoding="utf-8")
     assert "<h2>Report Summary</h2>" in contents
     assert "<h2>Narrative Summary</h2>" in contents
-    assert "<table class=\"citations\">" in contents
-    assert "href=\"https://supreme.justia.com/cases/federal/us/410/113/\"" in contents
+    assert '<table class="citations">' in contents
+    assert 'href="https://supreme.justia.com/cases/federal/us/410/113/"' in contents
     assert "No supporting evidence provided." in contents
 
 

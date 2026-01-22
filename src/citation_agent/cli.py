@@ -25,9 +25,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from .models import CitationAssessment, CitationVerificationReport
-from .service import AgentConfig, CitationAgentService, ProgressEvent
+from .models import CitationVerificationReport
 from .report_exporter import ReportExporter
+from .service import AgentConfig, CitationAgentService, ProgressEvent
 
 app = typer.Typer(help="Vet legal briefs for hallucinated citations using OpenAI agents.")
 console = Console()
@@ -51,8 +51,12 @@ def verify(
     model: Annotated[str, typer.Option(help="OpenAI model identifier.")] = "gpt-4o-mini",
     temperature: Annotated[float, typer.Option(min=0.0, max=1.0)] = 0.1,
     max_turns: Annotated[int, typer.Option(help="Max reasoning turns before aborting.")] = 8,
-    web_search: Annotated[bool, typer.Option(help="Allow the agent to search the open web.")] = True,
-    output: Annotated[Literal["table", "json"], typer.Option(help="Choose JSON for raw output.")] = "table",
+    web_search: Annotated[
+        bool, typer.Option(help="Allow the agent to search the open web.")
+    ] = True,
+    output: Annotated[
+        Literal["table", "json"], typer.Option(help="Choose JSON for raw output.")
+    ] = "table",
     export_html: Annotated[
         Path | None,
         typer.Option(
@@ -118,11 +122,10 @@ def verify(
 
         # Export structured reports alongside the console table
         $ citation-agent verify brief.txt --export reports/
-    
+
     Note:
         Requires OPENAI_API_KEY environment variable to be set.
     """
-
     if file is None and text is None:
         raise typer.BadParameter("Provide a document path or use --text / '-' for stdin input.")
     if file is not None and text is not None:
@@ -169,7 +172,6 @@ def _run_service(
     text: str | None,
 ) -> CitationVerificationReport:
     """Execute the appropriate service entry point based on user input."""
-
     if text is not None:
         if not text.strip():
             raise ValueError("Provided --text input is empty.")
@@ -193,7 +195,6 @@ def _handle_exports(
     export_dir: Path | None,
 ) -> None:
     """Write report exports requested through CLI flags."""
-
     if not any((export_html, export_csv, export_dir)):
         return
 
@@ -254,7 +255,12 @@ class _ProgressRenderer:
         else:
             body.add_row(Text("Waiting for agent activity...", style="dim"))
         header = Text(f"Active agent: {self._current_agent}", style="bold cyan")
-        return Panel(Group(header, body), title="Agent progress", border_style="cyan", padding=(1, 1))
+        return Panel(
+            Group(header, body),
+            title="Agent progress",
+            border_style="cyan",
+            padding=(1, 1),
+        )
 
     def _format_event(self, event: ProgressEvent) -> Text | None:
         payload = event.payload or {}
@@ -330,12 +336,17 @@ def explain_tools() -> None:
         - search_brief_sections: Find relevant passages
         - web_search: Verify citations online (optional)
     """
-
     rows = [
-        ("list_brief_sections", "Quick index of document sections, accepts pagination arguments."),
+        (
+            "list_brief_sections",
+            "Quick index of document sections, accepts pagination arguments.",
+        ),
         ("get_brief_section", "Returns verbatim text (with line numbers) for a section."),
         ("search_brief_sections", "Keyword search to find relevant passages."),
-        ("web_search", "Hosted OpenAI tool to look up cases/statutes on the public web (optional)."),
+        (
+            "web_search",
+            "Hosted OpenAI tool to look up cases/statutes on the public web (optional).",
+        ),
     ]
     table = Table(title="Available Tools", show_lines=True)
     table.add_column("Tool", style="cyan", no_wrap=True)

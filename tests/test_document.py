@@ -1,6 +1,7 @@
 import pytest
 
-from citation_agent.document import chunk_document, annotate_document
+from citation_agent.document import annotate_document, chunk_document
+
 
 def test_chunk_document_basic():
     text = "Line one\nLine two\nLine three\nLine four"
@@ -35,6 +36,7 @@ def test_chunk_document_invalid_parameters(max_lines, overlap, message):
     with pytest.raises(ValueError) as exc_info:
         chunk_document(text, max_lines=max_lines, overlap=overlap)
     assert message in str(exc_info.value)
+
 
 def test_annotate_document_numbers_lines():
     text = "A\nB\nC"

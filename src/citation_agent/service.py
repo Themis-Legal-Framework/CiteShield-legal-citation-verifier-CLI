@@ -15,9 +15,9 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, WebSearchTool
@@ -34,7 +34,6 @@ from .tools import (
     lookup_authority,
     search_brief_sections,
 )
-
 
 AUTHORITY_LOOKUP_API_KEY_ENV = "CITESHIELD_AUTHORITY_LOOKUP_API_KEY"
 AUTHORITY_LOOKUP_BASE_URL_ENV = "CITESHIELD_AUTHORITY_LOOKUP_BASE_URL"
@@ -284,7 +283,9 @@ class CitationAgentService:
         text = load_document_text(brief_path)
         return self.run_from_text(text, document_name=brief_path.name)
 
-    def run_from_text(self, text: str, *, document_name: str = "pasted-text") -> CitationVerificationReport:
+    def run_from_text(
+        self, text: str, *, document_name: str = "pasted-text"
+    ) -> CitationVerificationReport:
         """Run citation verification on an in-memory string.
 
         Args:

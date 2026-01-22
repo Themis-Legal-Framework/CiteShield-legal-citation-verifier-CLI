@@ -16,9 +16,9 @@ agent execution.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import logging
+from dataclasses import dataclass, field
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -27,7 +27,6 @@ from urllib.request import Request, urlopen
 from agents import RunContextWrapper, function_tool
 
 from .document import DocumentChunk
-
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +78,7 @@ class AuthorityLookupClient:
                 if status is None:
                     status = getattr(response, "code", None)
                 if status is not None and int(status) >= 400:
-                    raise AuthorityLookupError(
-                        f"Authority lookup failed with status code {status}"
-                    )
+                    raise AuthorityLookupError(f"Authority lookup failed with status code {status}")
                 raw = response.read()
         except HTTPError as exc:  # pragma: no cover - HTTP failure details
             raise AuthorityLookupError(
@@ -131,9 +128,7 @@ class AuthorityLookupClient:
         snippets = normalized_snippets
 
         return {
-            "authority_name": payload.get("authority_name")
-            or payload.get("title")
-            or citation,
+            "authority_name": payload.get("authority_name") or payload.get("title") or citation,
             "citation": payload.get("citation", citation),
             "jurisdiction": payload.get("jurisdiction", jurisdiction),
             "snippets": snippets,

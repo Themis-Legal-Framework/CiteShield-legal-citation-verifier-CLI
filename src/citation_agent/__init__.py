@@ -1,6 +1,6 @@
 """Citation Agent package."""
 
-from .models import CitationVerificationReport, CitationAssessment
+from .models import CitationAssessment, CitationVerificationReport
 from .report_exporter import ReportExporter
 from .service import CitationAgentService, ProgressCallback, ProgressEvent
 

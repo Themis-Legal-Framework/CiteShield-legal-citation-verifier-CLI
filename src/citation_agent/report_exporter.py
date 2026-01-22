@@ -1,12 +1,13 @@
 """Utilities for exporting citation verification reports."""
+
 from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Iterable
 from html import escape
 from io import StringIO
 from pathlib import Path
-from typing import Iterable
 
 from .models import CitationAssessment, CitationVerificationReport
 
@@ -45,7 +46,8 @@ class ReportExporter:
 
         if report.citations:
             citation_rows = "".join(
-                _citation_row(index + 1, citation) for index, citation in enumerate(report.citations)
+                _citation_row(index + 1, citation)
+                for index, citation in enumerate(report.citations)
             )
             citation_table = f"""
             <table class=\"citations\">
@@ -222,12 +224,13 @@ class ReportExporter:
 
 def _summary_row(label: str, value: object, highlight: bool = False) -> str:
     formatted_value = _format_summary_value(value, highlight)
-    return """
+    escaped_label = escape(str(label))
+    return f"""
         <tr>
-            <th>{}</th>
-            <td>{}</td>
+            <th>{escaped_label}</th>
+            <td>{formatted_value}</td>
         </tr>
-    """.format(escape(str(label)), formatted_value)
+    """
 
 
 def _format_summary_value(value: object, highlight: bool) -> str:
@@ -261,7 +264,7 @@ def _citation_row(index: int, citation: CitationAssessment) -> str:
             <td>{escape(citation.risk_level)}</td>
             <td>{escape(citation.proposition_summary)}</td>
             <td>{escape(citation.reasoning)}</td>
-            <td>{escape(citation.recommended_fix or '—')}</td>
+            <td>{escape(citation.recommended_fix or "—")}</td>
             <td>{supporting}</td>
         </tr>
     """
