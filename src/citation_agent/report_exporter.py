@@ -223,12 +223,13 @@ class ReportExporter:
 
 def _summary_row(label: str, value: object, highlight: bool = False) -> str:
     formatted_value = _format_summary_value(value, highlight)
-    return """
+    escaped_label = escape(str(label))
+    return f"""
         <tr>
-            <th>{}</th>
-            <td>{}</td>
+            <th>{escaped_label}</th>
+            <td>{formatted_value}</td>
         </tr>
-    """.format(escape(str(label)), formatted_value)
+    """
 
 
 def _format_summary_value(value: object, highlight: bool) -> str:
