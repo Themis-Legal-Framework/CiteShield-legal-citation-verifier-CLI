@@ -24,7 +24,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from agents import RunContextWrapper, function_tool
+from agents import function_tool, RunContextWrapper
 
 from .document import DocumentChunk
 
