@@ -11,6 +11,7 @@ workflow from raw document to structured CitationVerificationReport.
 """
 
 from __future__ import annotations
+
 import inspect
 import logging
 import os
