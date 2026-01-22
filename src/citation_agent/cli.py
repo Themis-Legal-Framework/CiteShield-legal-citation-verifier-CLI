@@ -48,7 +48,7 @@ def verify(
             help="Provide raw document text directly via the command line.",
         ),
     ] = None,
-    model: Annotated[str, typer.Option(help="OpenAI model identifier.")] = "gpt-4.1-mini",
+    model: Annotated[str, typer.Option(help="OpenAI model identifier.")] = "gpt-4o-mini",
     temperature: Annotated[float, typer.Option(min=0.0, max=1.0)] = 0.1,
     max_turns: Annotated[int, typer.Option(help="Max reasoning turns before aborting.")] = 8,
     web_search: Annotated[bool, typer.Option(help="Allow the agent to search the open web.")] = True,
@@ -90,7 +90,7 @@ def verify(
     Args:
         file: Path to the document file (.txt, .md, .pdf, or .docx). Use '-' to read from stdin.
         text: Raw document text provided inline via --text
-        model: OpenAI model to use (e.g., 'gpt-4.1-mini', 'o4-mini')
+        model: OpenAI model to use (e.g., 'gpt-4o-mini', 'gpt-4o')
         temperature: Sampling temperature (0.0-1.0), lower is more deterministic
         max_turns: Maximum number of agent reasoning iterations
         web_search: Enable web search for citation verification
@@ -111,7 +111,7 @@ def verify(
         $ citation-agent verify --text "Roe v. Wade..."
 
         # Use a specific model with JSON output
-        $ citation-agent verify brief.pdf --model gpt-4.1 --output json
+        $ citation-agent verify brief.pdf --model gpt-4o --output json
 
         # Disable web search and increase max turns
         $ citation-agent verify memo.docx --no-web-search --max-turns 12

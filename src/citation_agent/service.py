@@ -47,7 +47,7 @@ class AgentConfig:
     """Runtime configuration for the citation agent.
 
     Attributes:
-        model: OpenAI model identifier (e.g., 'gpt-4.1-mini', 'o4-mini')
+        model: OpenAI model identifier (e.g., 'gpt-4o-mini', 'gpt-4o')
         temperature: Sampling temperature (0.0-1.0), lower is more deterministic
         max_turns: Maximum reasoning iterations before timing out
         enable_web_search: Whether to provide the agent with web search capability
@@ -57,7 +57,7 @@ class AgentConfig:
         authority_lookup_timeout: Request timeout (seconds) for the lookup service
     """
 
-    model: str = "gpt-4.1-mini"
+    model: str = "gpt-4o-mini"
     temperature: float = 0.1
     max_turns: int = 8
     enable_web_search: bool = True
