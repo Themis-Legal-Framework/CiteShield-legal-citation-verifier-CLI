@@ -3,7 +3,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from agents import RunContextWrapper
 from agents.items import ModelResponse
 from agents.usage import Usage
